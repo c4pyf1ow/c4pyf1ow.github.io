@@ -21,7 +21,7 @@ import { expressiveCodeOptions, siteConfig } from "./src/site.config";
 
 // https://astro.build/config
 export default defineConfig({
-	site: siteConfig.url,
+	site: 'https://c4pyf1ow.github.io',
 	image: {
 		domains: ["webmention.io"],
 	},
@@ -90,7 +90,7 @@ export default defineConfig({
 		optimizeDeps: {
 			exclude: ["@resvg/resvg-js"],
 		},
-		plugins: [tailwind(), rawFonts([".ttf", ".woff"])],
+		plugins: [tailwind(), rawFonts([".ttf", ".woff"])] as any,
 	},
 	env: {
 		schema: {
