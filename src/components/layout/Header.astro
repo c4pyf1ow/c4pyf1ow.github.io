@@ -26,10 +26,23 @@ import { siteConfig } from "../../site.config";
                 preload="metadata"
                 muted
                 playsinline
+				loop
+				poster="/toothless-poster.png"
             >
                 <source src="/toothless.webm" type="video/webm" />
                 <img src="/toothless.gif" alt={`${siteConfig.title} logo`} />
             </video>
+            <img
+              id="logo-snapshot"
+              alt={`${siteConfig.title} logo snapshot`}
+              class="
+                h-20 w-20 sm:h-32 sm:w-32
+                object-contain
+                me-3 sm:absolute sm:-start-30 sm:-top-10 sm:me-0
+                transition duration-300
+              "
+              style="display:none;"
+            />
 			<!-- <img
                 src="/toothless.gif"
                 alt={`${siteConfig.title} logo`}
@@ -142,34 +155,85 @@ import { siteConfig } from "../../site.config";
 
 	customElements.define("mobile-button", MobileNavBtn);
 	
-	// Hover/Focus 播放、移出/失焦暫停
-    const logoVideo = document.getElementById("logo-video") as HTMLVideoElement | null;
-    const logoLink = document.querySelector('#main-header a[href="/"]') as HTMLAnchorElement | null;
 
-    if (logoVideo && logoLink) {
+// ...existing code (保留 MobileNavBtn 等)...
+    // 動態播放 / 暫停截圖
+    const logoVideo = document.getElementById("logo-video");
+    const logoSnapshot = document.getElementById("logo-snapshot");
+
+    if (logoVideo instanceof HTMLVideoElement && logoSnapshot instanceof HTMLImageElement) {
         const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
         let reduce = mql.matches;
-        mql.addEventListener?.("change", (e: MediaQueryListEvent) => {
-            reduce = e.matches;
-            if (reduce) { logoVideo.pause(); logoVideo.currentTime = 0; }
+        let lastTime = 0;
+        let ready = false;
+
+        const captureFrame = () => {
+            if (!ready) return;
+            const canvas = document.createElement("canvas");
+            canvas.width = logoVideo.videoWidth;
+            canvas.height = logoVideo.videoHeight;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) return;
+            ctx.drawImage(logoVideo, 0, 0, canvas.width, canvas.height);
+            logoSnapshot.src = canvas.toDataURL("image/png");
+        };
+
+        logoVideo.addEventListener("loadeddata", () => {
+            ready = true;
+            // 初始截第一幀
+            logoVideo.pause();
+            lastTime = 0;
+            captureFrame();
+            //logoVideo.style.display = "none";
+            //logoSnapshot.style.display = "block";
         });
 
-        const play = () => {
-            if (reduce) return;
-            if (logoVideo.readyState < 2) logoVideo.load();
-            logoVideo.currentTime = 0;
-            logoVideo.play().catch(() => {});
-        };
-        const stop = () => {
-            logoVideo.pause();
-            logoVideo.currentTime = 0;
+        mql.addEventListener?.("change", (e) => {
+            reduce = e.matches;
+            if (reduce) {
+                logoVideo.pause();
+                lastTime = logoVideo.currentTime;
+                captureFrame();
+                logoVideo.style.display = "none";
+                logoSnapshot.style.display = "block";
+            }
+        });
+		
+		let hovering = false;
+
+        const resumePlay = () => {
+            if (reduce || !ready) return;
+			hovering = true;
+            logoSnapshot.style.display = "none";
+            logoVideo.style.display = "block";
+            // 回到上次暫停位置
+            if (Math.abs(logoVideo.currentTime - lastTime) > 0.05) {
+                logoVideo.currentTime = lastTime;
+            }
+            logoVideo.play().catch(()=>{});
         };
 
-        logoLink.addEventListener("mouseenter", play);
-        logoLink.addEventListener("focus", play);
-        logoLink.addEventListener("mouseleave", stop);
-        logoLink.addEventListener("blur", stop);
-        logoVideo.addEventListener("ended", stop);
-        logoLink.addEventListener("touchstart", play, { passive: true });
+        const pauseAndShot = () => {
+            if (!ready) return;
+			hovering = false;
+            logoVideo.pause();
+            lastTime = logoVideo.currentTime;
+            captureFrame();
+            logoVideo.style.display = "none";
+            logoSnapshot.style.display = "block";
+        };
+		// 兼容性保險：若某些環境 loop 未生效，hover 中到尾端時手動重播
+		logoVideo.addEventListener("ended", () => {
+		if (hovering) {
+			logoVideo.currentTime = 0;
+			logoVideo.play().catch(()=>{});
+		}
+		});
+		[logoVideo, logoSnapshot].forEach((el) => 	 {
+		el.addEventListener("mouseenter", resumePlay);
+		el.addEventListener("mouseleave", pauseAndShot);
+		el.addEventListener("touchstart", resumePlay, { passive: true });
+		});
+    
     }
 </script>
