@@ -117,11 +117,11 @@ This is a note with a custom title.
 ## GitHub Repository Cards
 You can add dynamic cards that link to GitHub repositories, on page load, the repository information is pulled from the GitHub API.
 
-::github{repo="chrismwilliams/astro-theme-cactus"}
+::github{repo="c4pyf1ow/c4pyf1ow.github.io"}
 
 You can also link a Github user:
 
-::github{user="withastro"}
+::github{user="c4pyf1ow"}
 
 To use this feature you just use the "Github" directive:
 
