@@ -12,7 +12,35 @@ import { siteConfig } from "../../site.config";
 			class="inline-flex items-center sm:relative sm:inline-block sm:grayscale sm:hover:filter-none"
 			href="/"
 		>
-			<svg
+			<video
+                id="logo-video"
+                aria-label="true"
+                class="
+						h-20 w-20 sm:h-32 sm:w-32      /* 尺寸（可換成 h-[125px] w-[125px]） */
+						object-contain                      /* 影片完整顯示不裁切 */
+						me-3 sm:absolute sm:-start-30 sm:-top-10 sm:me-0  /* 與舊圖相同的定位邏輯 */
+						rounded-md shadow                   /* 圓角與陰影 */
+						grayscale hover:grayscale-0         /* 滑過轉彩色 */
+						transition duration-300 hover:scale-105
+						motion-reduce:transition-none       /* 尊重減少動態設定 */
+					"
+                preload="metadata"
+                muted
+                playsinline
+            >
+                <source src="/toothless.webm" type="video/webm" />
+                <img src="/toothless.gif" alt={`${siteConfig.title} logo`} />
+            </video>
+			<!-- <img
+                src="/toothless.gif"
+                alt={`${siteConfig.title} logo`}
+                class="me-3 h-50 w-50 sm:absolute sm:-start-18 sm:me-0 sm:h-50 sm:w-50 object-contain"
+                loading="eager"
+                decoding="async"
+                width="374"  
+                height="498" 
+            /> -->
+			<!-- <svg
 				aria-hidden="true"
 				class="me-3 h-10 w-6 sm:absolute sm:-start-18 sm:me-0 sm:h-20 sm:w-12"
 				fill="none"
@@ -31,7 +59,7 @@ import { siteConfig } from "../../site.config";
 					fill="#2abc89"
 					d="m136 53.333 45.333-26.666v120L226.667 120V80L272 53.333V160l-90.667 53.333v240L136 480V306.667L45.334 360V220l45.333-26.667v73.334L136 240z"
 				></path>
-			</svg>
+			</svg> -->
 			<span class="text-xl font-bold sm:text-2xl">{siteConfig.title}</span>
 		</a>
 		<nav
@@ -114,4 +142,35 @@ import { siteConfig } from "../../site.config";
 	}
 
 	customElements.define("mobile-button", MobileNavBtn);
+	
+	// Hover/Focus 播放、移出/失焦暫停
+    const logoVideo = document.getElementById("logo-video") as HTMLVideoElement | null;
+    const logoLink = document.querySelector('#main-header a[href="/"]') as HTMLAnchorElement | null;
+
+    if (logoVideo && logoLink) {
+        const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
+        let reduce = mql.matches;
+        mql.addEventListener?.("change", (e: MediaQueryListEvent) => {
+            reduce = e.matches;
+            if (reduce) { logoVideo.pause(); logoVideo.currentTime = 0; }
+        });
+
+        const play = () => {
+            if (reduce) return;
+            if (logoVideo.readyState < 2) logoVideo.load();
+            logoVideo.currentTime = 0;
+            logoVideo.play().catch(() => {});
+        };
+        const stop = () => {
+            logoVideo.pause();
+            logoVideo.currentTime = 0;
+        };
+
+        logoLink.addEventListener("mouseenter", play);
+        logoLink.addEventListener("focus", play);
+        logoLink.addEventListener("mouseleave", stop);
+        logoLink.addEventListener("blur", stop);
+        logoVideo.addEventListener("ended", stop);
+        logoLink.addEventListener("touchstart", play, { passive: true });
+    }
 </script>
